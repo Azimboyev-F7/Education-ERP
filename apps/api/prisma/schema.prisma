@@ -1,0 +1,208 @@
+// Phase 0: identity, organisation, sessions, audit.
+// Every tenant-owned row carries centerId so a second centre never needs a retrofit.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StaffRole {
+  ADMINISTRATOR
+  ACADEMIC_MANAGER
+  TEACHER
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum IeltsModule {
+  ACADEMIC
+  GENERAL
+}
+
+model Center {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  branches Branch[]
+  courses  Course[]
+  periods  AcademicPeriod[]
+  users    User[]
+  groups   Group[]
+}
+
+model Branch {
+  id       String @id @default(cuid())
+  centerId String
+  name     String
+
+  center          Center           @relation(fields: [centerId], references: [id])
+  groups          Group[]
+  roleAssignments RoleAssignment[]
+
+  @@unique([centerId, name])
+}
+
+model Course {
+  id       String @id @default(cuid())
+  centerId String
+  name     String
+
+  center Center  @relation(fields: [centerId], references: [id])
+  levels Level[]
+  groups Group[]
+
+  @@unique([centerId, name])
+}
+
+model Level {
+  id       String @id @default(cuid())
+  courseId String
+  name     String
+  position Int
+
+  course Course  @relation(fields: [courseId], references: [id])
+  groups Group[]
+
+  @@unique([courseId, name])
+}
+
+model AcademicPeriod {
+  id       String   @id @default(cuid())
+  centerId String
+  name     String
+  startsOn DateTime @db.Date
+  endsOn   DateTime @db.Date
+
+  center Center  @relation(fields: [centerId], references: [id])
+  groups Group[]
+
+  @@unique([centerId, name])
+}
+
+model User {
+  id           String     @id @default(cuid())
+  centerId     String
+  username     String     @unique
+  fullName     String
+  passwordHash String
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+
+  center          Center           @relation(fields: [centerId], references: [id])
+  roleAssignments RoleAssignment[]
+  studentProfile  StudentProfile?
+  teaching        GroupTeacher[]
+  enrollments     Enrollment[]
+  sessions        Session[]
+  auditEntries    AuditLog[]
+
+  @@index([centerId])
+}
+
+/// A staff role with its scope. branchId is null for centre-wide roles (ADMINISTRATOR)
+/// and for TEACHER, whose scope is the groups they teach (GroupTeacher).
+model RoleAssignment {
+  id       String    @id @default(cuid())
+  userId   String
+  role     StaffRole
+  branchId String?
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch Branch? @relation(fields: [branchId], references: [id])
+
+  @@index([userId])
+}
+
+model StudentProfile {
+  userId     String       @id
+  targetBand Float?
+  examDate   DateTime?    @db.Date
+  module     IeltsModule  @default(ACADEMIC)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Group {
+  id         String    @id @default(cuid())
+  centerId   String
+  branchId   String
+  courseId   String
+  levelId    String?
+  periodId   String?
+  name       String
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  center      Center          @relation(fields: [centerId], references: [id])
+  branch      Branch          @relation(fields: [branchId], references: [id])
+  course      Course          @relation(fields: [courseId], references: [id])
+  level       Level?          @relation(fields: [levelId], references: [id])
+  period      AcademicPeriod? @relation(fields: [periodId], references: [id])
+  teachers    GroupTeacher[]
+  enrollments Enrollment[]
+
+  @@index([centerId, branchId])
+}
+
+model GroupTeacher {
+  groupId String
+  userId  String
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@index([userId])
+}
+
+/// Dated membership, so a student's history survives a group change.
+model Enrollment {
+  id        String    @id @default(cuid())
+  groupId   String
+  studentId String
+  startedOn DateTime  @default(now()) @db.Date
+  endedOn   DateTime? @db.Date
+
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([studentId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  /// SHA-256 of the cookie token; the raw token is never stored.
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  centerId   String?
+  actorId    String?
+  action     String
+  entityType String?
+  entityId   String?
+  data       Json?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([centerId, createdAt])
+  @@index([entityType, entityId])
+}

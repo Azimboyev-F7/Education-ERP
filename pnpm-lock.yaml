@@ -218,6 +218,9 @@ importers:
       '@erp/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@erp/scoring':
+        specifier: workspace:*
+        version: link:../../packages/scoring
       '@nestjs/common':
         specifier: ^12.4.2
         version: 12.4.2(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@7.2.0)
@@ -322,6 +325,10 @@ importers:
         version: 7.0.2
 
   packages/scoring:
+    dependencies:
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       typescript:
         specifier: ^7.0.2

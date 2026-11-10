@@ -217,3 +217,36 @@ architecture, mostly a new front door onto the phase 1 engine.
    practice tests are copyrighted and cannot simply be loaded in.
 5. **Login** — username/password issued by staff (default), or phone/Telegram.
 6. **Languages** at launch, and whether multiple branches exist on day one.
+
+## 7. Implementation status and deliberate deviations
+
+Phases 0 and 1 are implemented on the backend (`apps/api`); the front-ends are still thin shells.
+
+| Area | Where | Notes |
+|---|---|---|
+| Access rules | `src/access/` | Pure policy functions plus one service that applies them to rows |
+| Content library | `src/content/` | A draft is saved as one validated document; published versions are immutable |
+| Question types | `packages/scoring/src/question-types.ts` | Registry: schema + scorer per type; eight types so far |
+| Assignments | `src/assignments/` | One recipient row per student; "overdue" is derived from the due date, not stored |
+| Attempt engine | `src/attempts/` | Server-side deadline, autosave, idempotent submit, keys withheld until submission |
+| Review | `src/reviews/` | Queue scoped to the reviewer's students; rubric bands validated; IELTS rounding |
+| Evidence | `src/analytics/` | Outbox-driven projector into `SkillEvidence`; student, group and assignment reports |
+| Events | `src/outbox/` | Transactional outbox with at-least-once delivery, backoff and a dead-letter state |
+
+Where the build differs from the plan above, and why:
+
+- **Queue: PostgreSQL outbox instead of Redis + BullMQ.** Events are written in the same transaction
+  as the change, which a Redis queue cannot guarantee, and it removes a moving part. The
+  `publish / on / drain` interface is the seam if a dedicated queue is needed later.
+- **Rollups: computed on read instead of pre-aggregated tables.** The fact table is indexed for the
+  three report shapes. Add rollup tables when a report gets slow, not before.
+- **Rubrics: defined in code, versioned by key** (`IELTS_WRITING_V1`) instead of a database table.
+  A review stores the key it was scored with. Move them to data if centres need to edit rubrics.
+- **Tags: a string array on the version** (`topic:energy`) instead of a tag table.
+- **One published version per task set.** Publishing a new version retires the previous one;
+  work already assigned on the old version continues against it.
+- **Band estimates** are produced only for full-length (40-question), timed Listening or Reading
+  sets, from approximate public conversion tables, and are always flagged as estimates.
+
+Not built yet from phase 1: CSV/XLSX exports, file upload for audio and images (only a storage key
+is stored), second-marker moderation, revision requests, and the staff and student screens.

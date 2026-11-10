@@ -1,7 +1,8 @@
 # Education ERP — IELTS performance and self-training platform
 
-Design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). This repository currently contains **phase 0**:
-identity, organisation model, role-scoped access, sessions, audit log, and the two front-end shells.
+Design: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The backend for **phases 0 and 1** is implemented: identity and role-scoped access, the content
+library, assignments, the attempt engine, auto-scoring, the review queue, and the evidence and
+reporting endpoints. The two front-ends are still sign-in shells.
 
 | Path | What |
 |---|---|
@@ -27,6 +28,11 @@ Seeded accounts (all use `SEED_PASSWORD`): `admin`, `manager.main`, `teacher.a`,
 ## Checks
 
 `pnpm typecheck` · `pnpm test` · `pnpm lint` · `pnpm build`
+
+`pnpm test:int` runs the API against a real database and **truncates every table**, so it needs its
+own throwaway database: put `TEST_DATABASE_URL=...` in `apps/api/.env.test`.
+`apps/api/test/teacher-loop.int.test.ts` is the best walkthrough of the API: it runs the whole loop
+from authoring a task set to the reports.
 
 ## Access rules
 

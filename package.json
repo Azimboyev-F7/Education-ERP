@@ -2,7 +2,9 @@
   "name": "education-erp",
   "private": true,
   "packageManager": "pnpm@12.18.0",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -11,7 +13,8 @@
     "lint": "turbo run lint",
     "db:up": "docker compose up -d postgres redis",
     "db:migrate": "pnpm --filter @erp/api exec prisma migrate dev",
-    "db:seed": "pnpm --filter @erp/api run seed"
+    "db:seed": "pnpm --filter @erp/api run seed",
+    "test:int": "turbo run test:int"
   },
   "devDependencies": {
     "turbo": "^2.11.10",

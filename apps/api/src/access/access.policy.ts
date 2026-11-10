@@ -65,6 +65,33 @@ export function branchFilter(p: Principal): BranchFilter | null {
   };
 }
 
+/** Any staff member may draft content; it reaches students only after approval. */
+export function canAuthorContent(p: Principal): boolean {
+  return isStaff(p);
+}
+
+/** Approving, returning and retiring content is for administrators and academic managers. */
+export function canApproveContent(p: Principal): boolean {
+  return p.roles.some((r) => r.role === 'ADMINISTRATOR' || r.role === 'ACADEMIC_MANAGER');
+}
+
+/** Drafts are edited by their author, or by anyone who may approve content. */
+export function canEditDraft(p: Principal, createdById: string): boolean {
+  return p.userId === createdById || canApproveContent(p);
+}
+
+export type AssignmentFilter =
+  | { centerId: string }
+  | { centerId: string; OR: [{ group: GroupFilter }, { createdById: string }] };
+
+/** Filter for Assignment queries: assignments for groups in scope, plus ones the caller made. */
+export function assignmentFilter(p: Principal): AssignmentFilter | null {
+  const groups = groupFilter(p);
+  if (!groups) return null;
+  if (!('OR' in groups)) return { centerId: p.centerId };
+  return { centerId: p.centerId, OR: [{ group: groups }, { createdById: p.userId }] };
+}
+
 /** Creating or restructuring groups is a management action, never a teacher one. */
 export function canManageGroupsInBranch(p: Principal, branchId: string): boolean {
   const scope = staffScope(p);

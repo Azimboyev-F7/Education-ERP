@@ -96,12 +96,14 @@ model User {
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now())
 
-  center          Center           @relation(fields: [centerId], references: [id])
+  center          Center                @relation(fields: [centerId], references: [id])
   roleAssignments RoleAssignment[]
   studentProfile  StudentProfile?
   teaching        GroupTeacher[]
   enrollments     Enrollment[]
   sessions        Session[]
+  recipients      AssignmentRecipient[]
+  attempts        Attempt[]
   auditEntries    AuditLog[]
 
   @@index([centerId])
@@ -122,10 +124,10 @@ model RoleAssignment {
 }
 
 model StudentProfile {
-  userId     String       @id
+  userId     String      @id
   targetBand Float?
-  examDate   DateTime?    @db.Date
-  module     IeltsModule  @default(ACADEMIC)
+  examDate   DateTime?   @db.Date
+  module     IeltsModule @default(ACADEMIC)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -148,6 +150,7 @@ model Group {
   period      AcademicPeriod? @relation(fields: [periodId], references: [id])
   teachers    GroupTeacher[]
   enrollments Enrollment[]
+  assignments Assignment[]
 
   @@index([centerId, branchId])
 }
@@ -205,4 +208,334 @@ model AuditLog {
 
   @@index([centerId, createdAt])
   @@index([entityType, entityId])
+}
+
+// ===================== Phase 1: content =====================
+
+enum Skill {
+  LISTENING
+  READING
+  WRITING
+  SPEAKING
+}
+
+enum ContentStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  RETIRED
+}
+
+enum StimulusKind {
+  PASSAGE
+  AUDIO
+  IMAGE
+  CUE_CARD
+}
+
+model TaskSet {
+  id          String    @id @default(cuid())
+  centerId    String
+  title       String
+  /// Null for mixed-skill sets such as full mock tests.
+  skill       Skill?
+  createdById String
+  createdAt   DateTime  @default(now())
+  archivedAt  DateTime?
+
+  versions TaskSetVersion[]
+
+  @@index([centerId])
+}
+
+/// Immutable once PUBLISHED: edits create a new version, so results never change meaning.
+model TaskSetVersion {
+  id            String        @id @default(cuid())
+  taskSetId     String
+  number        Int
+  status        ContentStatus @default(DRAFT)
+  difficulty    Int?
+  timeLimitSec  Int?
+  /// A complete 40-question Listening or Reading test; only these get a band estimate.
+  fullLength    Boolean       @default(false)
+  module        IeltsModule?
+  tags          String[]
+  createdById   String
+  createdAt     DateTime      @default(now())
+  publishedAt   DateTime?
+  publishedById String?
+  retiredAt     DateTime?
+
+  taskSet     TaskSet      @relation(fields: [taskSetId], references: [id], onDelete: Cascade)
+  sections    Section[]
+  assignments Assignment[]
+  attempts    Attempt[]
+
+  @@unique([taskSetId, number])
+}
+
+model Section {
+  id           String  @id @default(cuid())
+  versionId    String
+  position     Int
+  skill        Skill
+  /// e.g. LISTENING_PART_1, READING_PASSAGE_2, WRITING_TASK_2, SPEAKING_PART_3
+  kind         String
+  title        String?
+  instructions String?
+
+  version TaskSetVersion  @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  stimuli Stimulus[]
+  groups  QuestionGroup[]
+
+  @@unique([versionId, position])
+}
+
+model Stimulus {
+  id         String       @id @default(cuid())
+  sectionId  String
+  position   Int
+  kind       StimulusKind
+  title      String?
+  text       String?
+  /// Object-storage key for audio or images.
+  fileKey    String?
+  transcript String?
+
+  section Section         @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  groups  QuestionGroup[]
+
+  @@unique([sectionId, position])
+}
+
+model QuestionGroup {
+  id           String  @id @default(cuid())
+  sectionId    String
+  stimulusId   String?
+  position     Int
+  /// Key into the question-type registry in @erp/scoring.
+  type         String
+  instructions String?
+  config       Json
+
+  section   Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  stimulus  Stimulus?  @relation(fields: [stimulusId], references: [id])
+  questions Question[]
+
+  @@unique([sectionId, position])
+}
+
+model Question {
+  id          String  @id @default(cuid())
+  groupId     String
+  position    Int
+  /// Number shown to the student, unique within the version.
+  number      Int
+  prompt      Json
+  /// Never sent to a student before their attempt is submitted. Null for teacher-marked types.
+  answerKey   Json?
+  explanation String?
+  points      Int     @default(1)
+
+  group     QuestionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  responses Response[]
+
+  @@unique([groupId, position])
+}
+
+// ===================== Phase 1: assignments =====================
+
+enum AssignmentKind {
+  CLASSWORK
+  HOMEWORK
+  LEVEL_CHECK
+  EXAM
+}
+
+/// "Overdue" is derived (due date passed while ASSIGNED or STARTED), never stored.
+enum RecipientStatus {
+  ASSIGNED
+  STARTED
+  AWAITING_REVIEW
+  COMPLETED
+  EXCUSED
+}
+
+model Assignment {
+  id           String         @id @default(cuid())
+  centerId     String
+  versionId    String
+  groupId      String?
+  kind         AssignmentKind
+  title        String
+  instructions String?
+  opensAt      DateTime?
+  dueAt        DateTime?
+  timeLimitSec Int?
+  maxAttempts  Int            @default(1)
+  createdById  String
+  createdAt    DateTime       @default(now())
+  cancelledAt  DateTime?
+
+  version    TaskSetVersion        @relation(fields: [versionId], references: [id])
+  group      Group?                @relation(fields: [groupId], references: [id])
+  recipients AssignmentRecipient[]
+
+  @@index([centerId, groupId])
+}
+
+/// One row per student, created when the assignment is made, so late joiners and exemptions are explicit.
+model AssignmentRecipient {
+  id           String          @id @default(cuid())
+  assignmentId String
+  studentId    String
+  status       RecipientStatus @default(ASSIGNED)
+  completedAt  DateTime?
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student    User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attempts   Attempt[]
+
+  @@unique([assignmentId, studentId])
+  @@index([studentId])
+}
+
+// ===================== Phase 1: attempts, review, evidence =====================
+
+enum AttemptSource {
+  ASSIGNMENT
+  SELF_PRACTICE
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  AWAITING_REVIEW
+  COMPLETED
+}
+
+model Attempt {
+  id           String        @id @default(cuid())
+  centerId     String
+  studentId    String
+  versionId    String
+  source       AttemptSource
+  recipientId  String?
+  timed        Boolean
+  startedAt    DateTime      @default(now())
+  /// Server-authoritative: answers saved after this moment are rejected.
+  deadlineAt   DateTime?
+  submittedAt  DateTime?
+  status       AttemptStatus @default(IN_PROGRESS)
+  /// Totals for auto-scored questions only.
+  score        Float?
+  maxScore     Float?
+  bandEstimate Float?
+
+  student   User                 @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  version   TaskSetVersion       @relation(fields: [versionId], references: [id])
+  recipient AssignmentRecipient? @relation(fields: [recipientId], references: [id])
+  responses Response[]
+  reviews   ReviewTask[]
+
+  @@index([studentId, status])
+  @@index([recipientId])
+}
+
+model Response {
+  id          String   @id @default(cuid())
+  attemptId   String
+  questionId  String
+  answer      Json
+  isCorrect   Boolean?
+  score       Float?
+  maxScore    Float
+  timeSpentMs Int      @default(0)
+  changeCount Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  attempt  Attempt     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question Question    @relation(fields: [questionId], references: [id])
+  review   ReviewTask?
+
+  @@unique([attemptId, questionId])
+}
+
+enum ReviewStatus {
+  PENDING
+  DONE
+}
+
+/// A Writing or Speaking response waiting for, or holding, a teacher's rubric judgment.
+model ReviewTask {
+  id          String       @id @default(cuid())
+  centerId    String
+  attemptId   String
+  responseId  String       @unique
+  studentId   String
+  skill       Skill
+  taskType    String
+  rubricKey   String
+  status      ReviewStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  completedAt DateTime?
+  reviewerId  String?
+  /// Band per rubric criterion, e.g. { "TR": 6.5, "CC": 6, "LR": 6, "GRA": 5.5 }
+  criteria    Json?
+  overallBand Float?
+  comment     String?
+  nextStep    String?
+
+  attempt  Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  response Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+
+  @@index([centerId, status, createdAt])
+  @@index([studentId])
+}
+
+/// What kind of judgment a piece of evidence is. Kept distinct everywhere so a practice
+/// score is never presented as an official band.
+enum EvidenceKind {
+  AUTO_SCORED
+  TEACHER_ASSESSED
+  OFFICIAL_RESULT
+}
+
+/// Append-only fact table: one row per attempt x skill x task type x kind.
+model SkillEvidence {
+  id         String         @id @default(cuid())
+  centerId   String
+  studentId  String
+  groupId    String?
+  skill      Skill
+  taskType   String
+  kind       EvidenceKind
+  source     AttemptSource?
+  timed      Boolean
+  score      Float
+  maxScore   Float
+  band       Float?
+  occurredAt DateTime
+  attemptId  String?
+  versionId  String?
+
+  @@unique([attemptId, skill, taskType, kind])
+  @@index([studentId, skill, occurredAt])
+  @@index([groupId, occurredAt])
+}
+
+// ===================== Transactional outbox =====================
+
+/// Written in the same transaction as the change it describes; delivered at least once by the worker.
+model OutboxEvent {
+  id          String    @id @default(cuid())
+  type        String
+  payload     Json
+  createdAt   DateTime  @default(now())
+  availableAt DateTime  @default(now())
+  attempts    Int       @default(0)
+  processedAt DateTime?
+  failedAt    DateTime?
+  lastError   String?
+
+  @@index([processedAt, failedAt, availableAt])
 }

@@ -10,7 +10,9 @@
     "typecheck": "prisma generate && tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "seed": "node --env-file-if-exists=.env dist/seed.js",
-    "migrate:deploy": "prisma migrate deploy"
+    "migrate:deploy": "prisma migrate deploy",
+    "test:int": "vitest run --config vitest.int.config.ts",
+    "worker": "node --env-file-if-exists=.env dist/worker.js"
   },
   "dependencies": {
     "@erp/contracts": "workspace:*",
@@ -23,7 +25,8 @@
     "cookie-parser": "^1.4.7",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "@erp/scoring": "workspace:*"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.9",

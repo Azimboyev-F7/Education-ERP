@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Badge, Empty, formatDay, humanise, PageHeader, Row, RowLink, Section, SKILL_LABEL, Table, Td, Th, waiting } from "@/components/ui";
 import { apiGet, getCurrentUser } from "@/lib/api";
 
+export const instant = false;
+
 export default async function OverviewPage() {
   const [user, reviews, assignments, groups] = await Promise.all([
     getCurrentUser(),

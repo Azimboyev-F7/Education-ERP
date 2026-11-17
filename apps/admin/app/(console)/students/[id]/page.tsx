@@ -20,6 +20,7 @@ import {
 import { apiGet, NotFoundError } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Student" };
+export const instant = false;
 
 export default async function StudentPage({ params }: PageProps<"/students/[id]">) {
   const { id } = await params;

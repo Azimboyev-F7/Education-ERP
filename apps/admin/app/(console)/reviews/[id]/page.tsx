@@ -6,6 +6,7 @@ import { apiGet, NotFoundError } from "@/lib/api";
 import { ScoreForm } from "./score-form";
 
 export const metadata: Metadata = { title: "Review" };
+export const instant = false;
 
 export default async function ReviewPage({ params }: PageProps<"/reviews/[id]">) {
   const { id } = await params;

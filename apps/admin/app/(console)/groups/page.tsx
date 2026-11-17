@@ -4,6 +4,7 @@ import { Empty, PageHeader, Row, RowLink, Table, Td, Th } from "@/components/ui"
 import { apiGet } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Groups" };
+export const instant = false;
 
 export default async function GroupsPage() {
   const groups = await apiGet<GroupSummary[]>("/groups");

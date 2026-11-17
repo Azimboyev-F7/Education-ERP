@@ -4,6 +4,7 @@ import { Badge, Empty, formatDay, PageHeader, Row, Table, Td, Th } from "@/compo
 import { apiGet } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Assignments" };
+export const instant = false;
 
 const KIND = { CLASSWORK: "Classwork", HOMEWORK: "Homework", LEVEL_CHECK: "Level check", EXAM: "Exam" } as const;
 

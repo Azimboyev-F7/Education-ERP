@@ -6,6 +6,7 @@ import { apiGet, NotFoundError } from "@/lib/api";
 import { humanise } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Group" };
+export const instant = false;
 
 export default async function GroupPage({ params }: PageProps<"/groups/[id]">) {
   const { id } = await params;

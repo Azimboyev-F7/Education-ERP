@@ -5,6 +5,7 @@ import { Badge, Empty, formatBand, humanise, PageHeader, Row, RowLink, SKILL_LAB
 import { apiGet } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Reviews" };
+export const instant = false;
 
 export default async function ReviewsPage({ searchParams }: PageProps<"/reviews">) {
   const { status } = await searchParams;

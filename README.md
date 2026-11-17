@@ -23,7 +23,8 @@ from Prisma's local dev database (`pnpm --filter @erp/api exec prisma dev`, then
 4. `pnpm build`, then `pnpm db:seed`
 5. `pnpm dev`
 
-Seeded accounts (all use `SEED_PASSWORD`): `admin`, `manager.main`, `teacher.a`, `teacher.b`, `student1`…`student9`.
+Accounts are created through the API (`POST /staff`, `POST /students`); each returns a one-time password that the
+person must replace at first sign-in. Seeded accounts (all use `SEED_PASSWORD`): `admin`, `manager.main`, `teacher.a`, `teacher.b`, `student1`…`student9`.
 
 ## Checks
 

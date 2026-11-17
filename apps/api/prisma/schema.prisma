@@ -88,13 +88,15 @@ model AcademicPeriod {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  centerId     String
-  username     String     @unique
-  fullName     String
-  passwordHash String
-  status       UserStatus @default(ACTIVE)
-  createdAt    DateTime   @default(now())
+  id                 String     @id @default(cuid())
+  centerId           String
+  username           String     @unique
+  fullName           String
+  passwordHash       String
+  status             UserStatus @default(ACTIVE)
+  /// Set when staff issue a temporary password; the user can do nothing else until they choose their own.
+  mustChangePassword Boolean    @default(false)
+  createdAt          DateTime   @default(now())
 
   center          Center                @relation(fields: [centerId], references: [id])
   roleAssignments RoleAssignment[]

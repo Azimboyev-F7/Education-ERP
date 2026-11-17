@@ -10,7 +10,7 @@ import type { Request } from 'express';
 import { isStaff } from '../access/access.policy.js';
 import type { Principal } from '../access/principal.js';
 import { AuthService } from './auth.service.js';
-import { IS_PUBLIC, STAFF_ONLY } from './decorators.js';
+import { ALLOW_PASSWORD_CHANGE, IS_PUBLIC, STAFF_ONLY } from './decorators.js';
 
 export function sessionCookieName(): string {
   return process.env.SESSION_COOKIE_NAME ?? 'erp_session';
@@ -34,6 +34,9 @@ export class SessionGuard implements CanActivate {
     if (!principal) throw new UnauthorizedException();
     request.principal = principal;
 
+    if (principal.mustChangePassword && !this.reflector.getAllAndOverride<boolean>(ALLOW_PASSWORD_CHANGE, targets)) {
+      throw new ForbiddenException({ message: 'You must choose a new password first', code: 'PASSWORD_CHANGE_REQUIRED' });
+    }
     if (this.reflector.getAllAndOverride<boolean>(STAFF_ONLY, targets) && !isStaff(principal)) {
       throw new ForbiddenException();
     }

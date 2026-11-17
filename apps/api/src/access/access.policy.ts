@@ -94,7 +94,29 @@ export function assignmentFilter(p: Principal): AssignmentFilter | null {
 
 /** Creating or restructuring groups is a management action, never a teacher one. */
 export function canManageGroupsInBranch(p: Principal, branchId: string): boolean {
-  const scope = staffScope(p);
-  if (scope.kind === 'center') return true;
-  return scope.kind === 'scoped' && scope.branchIds.includes(branchId);
+  const managed = managedBranches(p);
+  return managed === 'all' || managed.includes(branchId);
+}
+
+export function isAdministrator(p: Principal): boolean {
+  return p.roles.some((r) => r.role === 'ADMINISTRATOR');
+}
+
+/** Staff accounts, roles and centre structure are administrator-only. */
+export const canManageStaff = isAdministrator;
+
+/**
+ * Branches whose groups and students the caller may restructure, i.e. everything that is a
+ * management action rather than a teaching one: 'all' for administrators, the managed
+ * branches for academic managers, none for anyone else (teachers included).
+ */
+export function managedBranches(p: Principal): 'all' | string[] {
+  if (isAdministrator(p)) return 'all';
+  return [...new Set(p.roles.flatMap((r) => (r.role === 'ACADEMIC_MANAGER' && r.branchId ? [r.branchId] : [])))];
+}
+
+/** Whether the caller may create accounts, reset passwords or enrol students for anyone at all. */
+export function canManageStudents(p: Principal): boolean {
+  const managed = managedBranches(p);
+  return managed === 'all' || managed.length > 0;
 }

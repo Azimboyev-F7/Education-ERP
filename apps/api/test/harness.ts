@@ -5,7 +5,7 @@ import { hashPassword } from '../src/auth/password.js';
 import { OutboxService } from '../src/outbox/outbox.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 
-const PASSWORD = 'integration-test-only';
+export const PASSWORD = 'integration-test-only';
 
 export interface TestApp {
   app: NestExpressApplication;
@@ -13,7 +13,9 @@ export interface TestApp {
   prisma: PrismaService;
   outbox: OutboxService;
   /** Signs in and returns a client that carries the session cookie. */
-  as(username: string): Promise<Client>;
+  as(username: string, password?: string): Promise<Client>;
+  /** A client with no session. */
+  anonymous(): Client;
   close(): Promise<void>;
 }
 
@@ -27,11 +29,13 @@ export async function startApp(): Promise<TestApp> {
     url,
     prisma: app.get(PrismaService),
     outbox: app.get(OutboxService),
-    async as(username) {
+    async as(username, password) {
       const client = new Client(url);
-      await client.login(username);
+      const status = await client.login(username, password);
+      if (status !== 204) throw new Error(`Login as ${username} failed with ${status}`);
       return client;
     },
+    anonymous: () => new Client(url),
     close: () => app.close(),
   };
 }
@@ -41,6 +45,7 @@ export interface Reply<T = any> {
   body: T;
   /** Raw response text, for asserting that something is absent from the payload. */
   text: string;
+  headers: Headers;
 }
 
 export class Client {
@@ -48,19 +53,22 @@ export class Client {
 
   constructor(private readonly base: string) {}
 
-  async login(username: string): Promise<void> {
+  /** Signs in and returns the HTTP status. The session cookie is kept only on success. */
+  async login(username: string, password = PASSWORD): Promise<number> {
     const response = await fetch(`${this.base}/auth/login`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ username, password: PASSWORD }),
+      body: JSON.stringify({ username, password }),
     });
-    if (response.status !== 204) throw new Error(`Login as ${username} failed with ${response.status}`);
-    this.cookie = response.headers.getSetCookie()[0]?.split(';')[0];
+    if (response.status === 204) this.cookie = response.headers.getSetCookie()[0]?.split(';')[0];
+    return response.status;
   }
 
   get = <T = any>(path: string) => this.request<T>('GET', path);
   post = <T = any>(path: string, body?: unknown) => this.request<T>('POST', path, body);
   put = <T = any>(path: string, body?: unknown) => this.request<T>('PUT', path, body);
+  patch = <T = any>(path: string, body?: unknown) => this.request<T>('PATCH', path, body);
+  delete = <T = any>(path: string) => this.request<T>('DELETE', path);
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<Reply<T>> {
     const response = await fetch(`${this.base}${path}`, {
@@ -72,7 +80,7 @@ export class Client {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await response.text();
-    return { status: response.status, text, body: (text ? JSON.parse(text) : null) as T };
+    return { status: response.status, text, headers: response.headers, body: (text ? JSON.parse(text) : null) as T };
   }
 }
 

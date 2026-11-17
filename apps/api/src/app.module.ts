@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccessModule } from './access/access.module.js';
+import { AccountsModule } from './accounts/accounts.module.js';
 import { AnalyticsModule } from './analytics/analytics.module.js';
 import { AssignmentsModule } from './assignments/assignments.module.js';
 import { AttemptsModule } from './attempts/attempts.module.js';
@@ -20,6 +21,7 @@ import { ReviewsModule } from './reviews/reviews.module.js';
     OutboxModule,
     AuthModule,
     OrgModule,
+    AccountsModule,
     ContentModule,
     AssignmentsModule,
     AttemptsModule,

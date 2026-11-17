@@ -5,3 +5,4 @@ export * from './content.js';
 export * from './assignments.js';
 export * from './attempts.js';
 export * from './reviews.js';
+export * from './accounts.js';

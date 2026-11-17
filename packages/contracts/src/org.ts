@@ -28,5 +28,6 @@ export const CreateGroupRequest = z.object({
   branchId: z.string().min(1),
   courseId: z.string().min(1),
   levelId: z.string().min(1).optional(),
+  periodId: z.string().min(1).optional(),
 });
 export type CreateGroupRequest = z.infer<typeof CreateGroupRequest>;

@@ -20,5 +20,7 @@ export const Me = z.object({
   fullName: z.string(),
   roles: z.array(RoleGrant),
   isStudent: z.boolean(),
+  /** True after staff issued a temporary password: only changing it is allowed until then. */
+  mustChangePassword: z.boolean(),
 });
 export type Me = z.infer<typeof Me>;

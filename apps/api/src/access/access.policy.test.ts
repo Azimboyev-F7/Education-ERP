@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { branchFilter, canManageGroupsInBranch, groupFilter, isStaff, staffScope } from './access.policy.js';
+import {
+  branchFilter,
+  canManageGroupsInBranch,
+  canManageStaff,
+  canManageStudents,
+  groupFilter,
+  isStaff,
+  managedBranches,
+  staffScope,
+} from './access.policy.js';
 import type { Principal } from './principal.js';
 
 const base: Principal = {
@@ -10,6 +19,7 @@ const base: Principal = {
   roles: [],
   taughtGroupIds: [],
   isStudent: false,
+  mustChangePassword: false,
 };
 
 const admin: Principal = { ...base, roles: [{ role: 'ADMINISTRATOR', branchId: null }] };
@@ -50,6 +60,22 @@ describe('filters', () => {
   it('return null (no rows) for non-staff', () => {
     expect(groupFilter(student)).toBeNull();
     expect(branchFilter(student)).toBeNull();
+  });
+});
+
+describe('managedBranches', () => {
+  it('is everything for administrators, own branches for managers, nothing for teachers', () => {
+    expect(managedBranches(admin)).toBe('all');
+    expect(managedBranches(manager)).toEqual(['b1']);
+    expect(managedBranches(teacher)).toEqual([]);
+    expect(managedBranches(student)).toEqual([]);
+  });
+  it('lets only administrators and managers manage students, and only administrators manage staff', () => {
+    expect(canManageStudents(admin)).toBe(true);
+    expect(canManageStudents(manager)).toBe(true);
+    expect(canManageStudents(teacher)).toBe(false);
+    expect(canManageStaff(admin)).toBe(true);
+    expect(canManageStaff(manager)).toBe(false);
   });
 });
 

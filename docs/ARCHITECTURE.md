@@ -225,6 +225,7 @@ Phases 0 and 1 are implemented on the backend (`apps/api`); the front-ends are s
 | Area | Where | Notes |
 |---|---|---|
 | Access rules | `src/access/` | Pure policy functions plus one service that applies them to rows |
+| Accounts and enrolment | `src/accounts/`, `src/org/` | Staff and student accounts, one-time passwords, roles, disable/enable, enrol / remove / transfer; centre structure and group management |
 | Content library | `src/content/` | A draft is saved as one validated document; published versions are immutable |
 | Question types | `packages/scoring/src/question-types.ts` | Registry: schema + scorer per type; eight types so far |
 | Assignments | `src/assignments/` | One recipient row per student; "overdue" is derived from the due date, not stored |
@@ -247,6 +248,14 @@ Where the build differs from the plan above, and why:
   work already assigned on the old version continues against it.
 - **Band estimates** are produced only for full-length (40-question), timed Listening or Reading
   sets, from approximate public conversion tables, and are always flagged as estimates.
+
+Account management rules: only administrators create staff, change roles, or change the centre structure;
+academic managers create students and manage groups and enrolments inside their own branches; teachers
+can set a student's goals but not change accounts. New and reset accounts get a random one-time password
+(shown once, never stored or logged) and can do nothing but change it until they do. Disabling or resetting
+an account ends its sessions at once, and the centre can never be left without an active administrator
+(changes that could do so are serialised on the centre row). One open enrolment per student and group is
+enforced by a partial unique index.
 
 Not built yet from phase 1: CSV/XLSX exports, file upload for audio and images (only a storage key
 is stored), second-marker moderation, revision requests, and the staff and student screens.

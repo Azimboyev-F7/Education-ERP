@@ -20,7 +20,7 @@ export const ChangePasswordRequest = z.object({
 });
 export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequest>;
 
-export const StaffRoleName = z.enum(['ADMINISTRATOR', 'ACADEMIC_MANAGER', 'TEACHER']);
+export const StaffRoleName = z.enum(['ADMINISTRATOR', 'ACADEMIC_MANAGER', 'TEACHER']).meta({ id: 'StaffRole' });
 export type StaffRoleName = z.infer<typeof StaffRoleName>;
 
 export const StaffRoleGrant = z

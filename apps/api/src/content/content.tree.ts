@@ -45,6 +45,58 @@ export function flattenQuestions(tree: VersionTree): FlatQuestion[] {
 }
 
 /**
+ * The staff view of a version, answer keys included. Spelled out field by field so storage
+ * details (the owning centre, positions, publisher) never reach a client by accident.
+ */
+export function toVersionDetail(tree: VersionTree) {
+  return {
+    id: tree.id,
+    number: tree.number,
+    status: tree.status,
+    difficulty: tree.difficulty,
+    timeLimitSec: tree.timeLimitSec,
+    fullLength: tree.fullLength,
+    module: tree.module,
+    tags: tree.tags,
+    createdById: tree.createdById,
+    createdAt: tree.createdAt,
+    publishedAt: tree.publishedAt,
+    retiredAt: tree.retiredAt,
+    taskSet: { id: tree.taskSet.id, title: tree.taskSet.title, skill: tree.taskSet.skill },
+    sections: tree.sections.map((section) => ({
+      id: section.id,
+      skill: section.skill,
+      kind: section.kind,
+      title: section.title,
+      instructions: section.instructions,
+      stimuli: section.stimuli.map((s) => ({
+        id: s.id,
+        kind: s.kind,
+        title: s.title,
+        text: s.text,
+        fileKey: s.fileKey,
+        transcript: s.transcript,
+      })),
+      groups: section.groups.map((group) => ({
+        id: group.id,
+        type: group.type,
+        instructions: group.instructions,
+        config: group.config,
+        stimulusId: group.stimulusId,
+        questions: group.questions.map((q) => ({
+          id: q.id,
+          number: q.number,
+          prompt: q.prompt,
+          answerKey: q.answerKey,
+          explanation: q.explanation,
+          points: q.points,
+        })),
+      })),
+    })),
+  };
+}
+
+/**
  * The content as a student may see it. Answer keys, explanations and transcripts are
  * included only when `reveal` is true, i.e. after the attempt has been submitted.
  */

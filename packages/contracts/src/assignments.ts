@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-export const AssignmentKind = z.enum(['CLASSWORK', 'HOMEWORK', 'LEVEL_CHECK', 'EXAM']);
+export const AssignmentKind = z.enum(['CLASSWORK', 'HOMEWORK', 'LEVEL_CHECK', 'EXAM']).meta({ id: 'AssignmentKind' });
 export type AssignmentKind = z.infer<typeof AssignmentKind>;
 
-export const RecipientStatus = z.enum(['ASSIGNED', 'STARTED', 'AWAITING_REVIEW', 'COMPLETED', 'EXCUSED']);
+export const RecipientStatus = z.enum(['ASSIGNED', 'STARTED', 'AWAITING_REVIEW', 'COMPLETED', 'EXCUSED']).meta({ id: 'RecipientStatus' });
 export type RecipientStatus = z.infer<typeof RecipientStatus>;
 
 export const CreateAssignmentRequest = z

@@ -9,7 +9,7 @@ reporting endpoints. The two front-ends are still sign-in shells.
 | `apps/api` | NestJS API, Prisma schema and migrations, seed |
 | `apps/admin` | Staff Console (Next.js), port 3000 |
 | `apps/student` | Student App (Next.js), port 3001 |
-| `packages/contracts` | zod schemas shared by API and front-ends |
+| `packages/contracts` | request and response schemas, the endpoint registry, and the generated OpenAPI document |
 | `packages/scoring` | pure scoring functions |
 
 ## Run locally
@@ -34,6 +34,14 @@ person must replace at first sign-in. Seeded accounts (all use `SEED_PASSWORD`):
 own throwaway database: put `TEST_DATABASE_URL=...` in `apps/api/.env.test`.
 `apps/api/test/teacher-loop.int.test.ts` is the best walkthrough of the API: it runs the whole loop
 from authoring a task set to the reports.
+
+## API reference
+
+With the API running (`pnpm dev`), open **http://localhost:4000/docs/** (or `/api/docs/` through either front-end) for the interactive
+reference; the raw document is at `/openapi.json` and a committed copy is [docs/openapi.json](docs/openapi.json). It is generated from
+`packages/contracts/src/endpoints.ts`: when you add or change a route, update the registry, then run
+`pnpm --filter @erp/contracts run openapi` to refresh the committed copy. Tests fail until the registry, the controllers and the
+committed copy agree.
 
 ## Access rules
 

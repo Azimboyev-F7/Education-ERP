@@ -4,6 +4,7 @@ import { createApp } from '../src/app.js';
 import { hashPassword } from '../src/auth/password.js';
 import { OutboxService } from '../src/outbox/outbox.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { checkContract } from './contract.js';
 
 export const PASSWORD = 'integration-test-only';
 
@@ -60,6 +61,12 @@ export class Client {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ username, password }),
     });
+    const text = await response.text();
+    checkContract('POST', '/auth/login', {
+      status: response.status,
+      body: text ? JSON.parse(text) : null,
+      headers: response.headers,
+    });
     if (response.status === 204) this.cookie = response.headers.getSetCookie()[0]?.split(';')[0];
     return response.status;
   }
@@ -80,7 +87,9 @@ export class Client {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     const text = await response.text();
-    return { status: response.status, text, headers: response.headers, body: (text ? JSON.parse(text) : null) as T };
+    const parsed: unknown = text ? JSON.parse(text) : null;
+    checkContract(method, path, { status: response.status, body: parsed, headers: response.headers });
+    return { status: response.status, text, headers: response.headers, body: parsed as T };
   }
 }
 

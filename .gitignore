@@ -8,3 +8,4 @@ dist
 *.log
 coverage
 apps/api/src/generated
+apps/api/test/.hits

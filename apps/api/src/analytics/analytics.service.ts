@@ -114,7 +114,7 @@ export class AnalyticsService {
     ]);
 
     return {
-      group,
+      group: { id: group.id, name: group.name, branchId: group.branchId },
       completion: completion(recipients.map((r) => ({ status: r.status, dueAt: r.assignment.dueAt }))),
       skills: summarise(evidence),
       students: enrollments.map(({ student }) => {

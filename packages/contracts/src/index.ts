@@ -6,3 +6,6 @@ export * from './assignments.js';
 export * from './attempts.js';
 export * from './reviews.js';
 export * from './accounts.js';
+export * from './responses/index.js';
+export * from './endpoints.js';
+export * from './openapi.js';

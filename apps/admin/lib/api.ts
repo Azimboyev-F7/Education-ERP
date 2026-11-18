@@ -1,4 +1,4 @@
-import type { Me } from "@erp/contracts";
+import type { ApiError, Me } from "@erp/contracts";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -17,8 +17,20 @@ export async function apiGet<T>(path: string): Promise<T> {
     headers: { cookie: `${COOKIE_NAME}=${encodeURIComponent(token)}` },
   });
   if (response.status === 401) redirect("/login");
+  if (response.status === 403) {
+    const error = (await response.json().catch(() => null)) as ApiError | null;
+    if (error?.code === "PASSWORD_CHANGE_REQUIRED") redirect("/password");
+  }
+  if (response.status === 404) throw new NotFoundError(path);
   if (!response.ok) throw new Error(`API ${path} failed with ${response.status}`);
   return (await response.json()) as T;
+}
+
+/** The API answers 404 for missing rows and for rows outside the caller's scope alike. */
+export class NotFoundError extends Error {
+  constructor(path: string) {
+    super(`Not found: ${path}`);
+  }
 }
 
 export function getCurrentUser(): Promise<Me> {

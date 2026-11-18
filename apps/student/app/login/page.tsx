@@ -5,10 +5,10 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default function LoginPage() {
   return (
-    <main className="flex flex-1 items-center justify-center bg-zinc-50 p-6">
-      <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h1 className="text-lg font-semibold text-zinc-900">Student App</h1>
-        <p className="mt-1 mb-6 text-sm text-zinc-500">Sign in with the username your centre gave you.</p>
+    <main className="flex flex-1 items-center justify-center p-6">
+      <div className="w-full max-w-[360px]">
+        <h1 className="text-[28px] leading-[34px] font-semibold tracking-[-0.02em] text-ink">Student App</h1>
+        <p className="mt-1 mb-8 text-ink-3">Sign in with the username your centre gave you.</p>
         <LoginForm />
       </div>
     </main>

@@ -7,7 +7,7 @@ import { z } from 'zod';
  * - TEACHER: the groups they are assigned to teach
  * STUDENT is implicit for users with a student profile and always means "self only".
  */
-export const Role = z.enum(['ADMINISTRATOR', 'ACADEMIC_MANAGER', 'TEACHER', 'STUDENT']);
+export const Role = z.enum(['ADMINISTRATOR', 'ACADEMIC_MANAGER', 'TEACHER', 'STUDENT']).meta({ id: 'Role' });
 export type Role = z.infer<typeof Role>;
 
 export const STAFF_ROLES = ['ADMINISTRATOR', 'ACADEMIC_MANAGER', 'TEACHER'] as const satisfies readonly Role[];

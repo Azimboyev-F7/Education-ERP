@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-export const Skill = z.enum(['LISTENING', 'READING', 'WRITING', 'SPEAKING']);
+export const Skill = z.enum(['LISTENING', 'READING', 'WRITING', 'SPEAKING']).meta({ id: 'Skill' });
 export type Skill = z.infer<typeof Skill>;
 
-export const ContentStatus = z.enum(['DRAFT', 'IN_REVIEW', 'PUBLISHED', 'RETIRED']);
+export const ContentStatus = z.enum(['DRAFT', 'IN_REVIEW', 'PUBLISHED', 'RETIRED']).meta({ id: 'ContentStatus' });
 export type ContentStatus = z.infer<typeof ContentStatus>;
 
-export const IeltsModule = z.enum(['ACADEMIC', 'GENERAL']);
+export const IeltsModule = z.enum(['ACADEMIC', 'GENERAL']).meta({ id: 'IeltsModule' });
 export type IeltsModule = z.infer<typeof IeltsModule>;
 
 /** The parts of the IELTS test a section can represent, per skill. */

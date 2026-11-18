@@ -18,7 +18,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { type ContentStatus, Prisma } from '../generated/prisma/client.js';
 import type { Tx } from '../outbox/outbox.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { flattenQuestions, type VersionTree, versionTree } from './content.tree.js';
+import { flattenQuestions, toVersionDetail, type VersionTree, versionTree } from './content.tree.js';
 
 interface ValidGroup {
   type: string;
@@ -88,13 +88,13 @@ export class ContentService {
   }
 
   /** Staff view of one version, including answer keys. */
-  async getVersion(user: Principal, versionId: string): Promise<VersionTree> {
+  async getVersion(user: Principal, versionId: string) {
     if (!canAuthorContent(user)) throw new ForbiddenException();
-    return this.load(user.centerId, versionId);
+    return toVersionDetail(await this.load(user.centerId, versionId));
   }
 
   /** Replaces the whole body of a draft. Saving is atomic: either all of it is stored or none. */
-  async saveContent(user: Principal, versionId: string, input: VersionContentInput): Promise<VersionTree> {
+  async saveContent(user: Principal, versionId: string, input: VersionContentInput) {
     const version = await this.load(user.centerId, versionId);
     if (version.status !== 'DRAFT') {
       throw new ConflictException('Only drafts can be edited. Create a new version to change published content.');
@@ -104,7 +104,7 @@ export class ContentService {
     const sections = this.validate(input);
     await this.prisma.$transaction((tx) => this.write(tx, versionId, input, sections));
     await this.record(user, 'content.save', versionId, { sections: input.sections.length });
-    return this.load(user.centerId, versionId);
+    return toVersionDetail(await this.load(user.centerId, versionId));
   }
 
   async submitForReview(user: Principal, versionId: string): Promise<void> {

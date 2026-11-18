@@ -22,3 +22,4 @@ allowBuilds:
   prisma: true
   sharp: false
   unrs-resolver: false
+  '@scarf/scarf': false

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const BranchSummary = z.object({ id: z.string(), name: z.string() });
+export const BranchSummary = z.object({ id: z.string(), name: z.string() }).meta({ id: 'BranchSummary' });
 export type BranchSummary = z.infer<typeof BranchSummary>;
 
 export const GroupSummary = z.object({
@@ -11,7 +11,7 @@ export const GroupSummary = z.object({
   courseName: z.string(),
   levelName: z.string().nullable(),
   studentCount: z.number().int(),
-});
+}).meta({ id: 'GroupSummary' });
 export type GroupSummary = z.infer<typeof GroupSummary>;
 
 export const StudentSummary = z.object({
@@ -20,7 +20,7 @@ export const StudentSummary = z.object({
   username: z.string(),
   targetBand: z.number().nullable(),
   groups: z.array(z.object({ id: z.string(), name: z.string() })),
-});
+}).meta({ id: 'StudentSummary' });
 export type StudentSummary = z.infer<typeof StudentSummary>;
 
 export const CreateGroupRequest = z.object({

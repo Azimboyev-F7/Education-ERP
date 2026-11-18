@@ -35,3 +35,6 @@ jobs:
       - run: pnpm build
       # Applies the committed migrations to an empty database, then runs the API against it.
       - run: pnpm test:int
+        env:
+          # Fail if any documented endpoint was never exercised, so every response schema is checked.
+          CONTRACT_COVERAGE: strict

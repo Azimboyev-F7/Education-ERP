@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Skill } from './content.js';
 
-export const AttemptStatus = z.enum(['IN_PROGRESS', 'AWAITING_REVIEW', 'COMPLETED']);
+export const AttemptStatus = z.enum(['IN_PROGRESS', 'AWAITING_REVIEW', 'COMPLETED']).meta({ id: 'AttemptStatus' });
 export type AttemptStatus = z.infer<typeof AttemptStatus>;
 
 /** Start assigned work (by recipient) or self-chosen practice (by published version). */

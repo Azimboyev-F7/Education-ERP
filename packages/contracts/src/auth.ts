@@ -13,14 +13,16 @@ export const RoleGrant = z.object({
 });
 export type RoleGrant = z.infer<typeof RoleGrant>;
 
-export const Me = z.object({
-  id: z.string(),
-  centerId: z.string(),
-  username: z.string(),
-  fullName: z.string(),
-  roles: z.array(RoleGrant),
-  isStudent: z.boolean(),
-  /** True after staff issued a temporary password: only changing it is allowed until then. */
-  mustChangePassword: z.boolean(),
-});
+export const Me = z
+  .object({
+    id: z.string(),
+    centerId: z.string(),
+    username: z.string(),
+    fullName: z.string(),
+    roles: z.array(RoleGrant),
+    isStudent: z.boolean(),
+    /** True after staff issued a temporary password: only changing it is allowed until then. */
+    mustChangePassword: z.boolean(),
+  })
+  .meta({ id: 'Me' });
 export type Me = z.infer<typeof Me>;

@@ -257,5 +257,16 @@ an account ends its sessions at once, and the centre can never be left without a
 (changes that could do so are serialised on the centre row). One open enrolment per student and group is
 enforced by a partial unique index.
 
+API contract: `packages/contracts` holds the request and response schemas and `endpoints.ts`, a registry that describes every
+route (method, path, who may call it, body, query, response, error statuses). The OpenAPI 3.1 document is generated from that
+registry, never written by hand: served at `/openapi.json` with an interactive reference at `/docs/` (on outside production;
+`API_DOCS=on|off` overrides), and committed as [openapi.json](openapi.json) for people and code generators. Nothing is trusted to
+stay in step by convention. The integration harness checks every response it sees against the registry (status, shape, and
+fields the schema does not declare), a test compares the controllers' routes with the registry, a full run fails if a documented
+endpoint was never exercised (`CONTRACT_COVERAGE=strict`, set in CI), and a test fails when `docs/openapi.json` is stale.
+Responses are plain JSON, so dates are ISO strings in the schemas; controllers are not typed against them at compile time
+(a `Date` is not a `string` until it is serialised), and the runtime checks are the guard. All errors share one body,
+`{ statusCode, message, code?, issues? }`, produced by a global exception filter.
+
 Not built yet from phase 1: CSV/XLSX exports, file upload for audio and images (only a storage key
 is stored), second-marker moderation, revision requests, and the staff and student screens.
